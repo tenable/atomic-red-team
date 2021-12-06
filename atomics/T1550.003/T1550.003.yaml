@@ -40,7 +40,8 @@ atomic_tests:
 - name: Rubeus Kerberos Pass The Ticket
   auto_generated_guid: a2fc4ec5-12c6-4fb4-b661-961f23f359cb
   description: |
-    Requesting a TGT on a remote system and passing it locally to request a service ticket
+    Requesting a TGT on a remote system and retrieving it locally before requesting a service ticket with it. This is a Pass-The-Ticket attack because the TGT is obtained on the remote system, then used from a different machine (local).
+    PsExec is used to execute commands on the remote system, and the "C$" admin share is used to retrieve the TGT, so the current user must have admin rights remotely and other PsExec prerequisites must be met.
   supported_platforms:
   - windows
   input_arguments:
