@@ -49,7 +49,7 @@ atomic_tests:
       type: string
       default: localhost
     user_name:
-      description: username associated with the ticket (privilged account not required)
+      description: username associated with the ticket (privileged account not required)
       type: String
       default: Administrator
     password:
