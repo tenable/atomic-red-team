@@ -53,7 +53,7 @@ atomic_tests:
       type: String
       default: Administrator
     password:
-      description: password
+      description: password for user_name
       type: String
       default: Password
     domain:
