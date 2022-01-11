@@ -71,6 +71,7 @@ atomic_tests:
     elevation_required: false
     command: |
       New-Item -Path "#{output_path}" -ItemType Directory > $null
+      klist purge
       & "#{sharphound_path}" -d "#{domain}" --CollectionMethod LocalAdmin --NoSaveCache --OutputDirectory "#{output_path}"
     cleanup_command: |
       Remove-Item -Recurse #{output_path}
