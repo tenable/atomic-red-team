@@ -201,6 +201,7 @@ atomic_tests:
   auto_generated_guid: bf67848f-f383-4bd9-9c03-9561aa938ed6
   description: |
     This module runs Mimikatz in order to retrieve the DPAPI Backup Key stored in Active Directory (https://blog.harmj0y.net/redteaming/operational-guidance-for-offensive-user-dpapi-abuse/).
+    Computer must be domain-joined and running with a sufficiently privileged account (e.g. Domain Admins).
   supported_platforms:
   - windows
   input_arguments:
@@ -239,6 +240,6 @@ atomic_tests:
       Write-Host "2. The binary of Mimikatz must be present on the system (https://github.com/gentilkiwi/mimikatz/releases)"
   executor:
     name: command_prompt
-    elevation_required: false
+    elevation_required: false # not locally, but must be privileged in the domain (e.g. Domain Admins)
     command: |
       "#{mimikatz_path}" "lsadump::backupkeys /system:#{target_dc}" exit
